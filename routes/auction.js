@@ -5,6 +5,7 @@ const productModel = require("../models/product");
 const notificationModel = require("../models/notification");
 const moment = require("moment");
 const { ObjectId } = require('mongoose').Types;
+
 // async function updateRemainingTime(productId) {
 //   const product = await productModel.findById(productId);
 
@@ -162,11 +163,13 @@ router.post("/bid", async (req, res) => {
     // Emit the notification to all users with role 'buyer' except the bidder
     const buyers = await userModel.find({ role: "buyer" });
     console.log("Buyer", buyers);
-    buyers.forEach((buyer) => {
-      io.emit("sendNotification", {
-        about: `User:${bidder.firstName} placed Bid of ${product.currentPrice} on ${product.name}`,
-      });
-    });
+    // buyers.forEach((buyer) => {
+    //   io.emit("sendNotification", {
+    //     about: `User:${bidder.firstName} placed Bid of ${product.currentPrice} on ${product.name}`,
+    //   });
+    // });
+
+    
 
     res
       .status(200)
