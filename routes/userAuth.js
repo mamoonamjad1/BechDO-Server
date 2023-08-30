@@ -5,6 +5,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const config= require('config')
+const socket = require("../middlewares/socket")
 
 router.post('/register', async(req,res)=>{
     const {firstName, lastName , email, password, confirmPassword  } = req.body;
@@ -28,8 +29,10 @@ router.post('/register', async(req,res)=>{
     res.send("User Successfully Registered")
 })
 
-router.post('/login', async(req,res)=>{
+router.post('/login', socket, async(req,res)=>{
     const {email,password} = req.body;
+    const io=  req.io
+    const userSockets = {};
 
     const user = await userModel.findOne({email})
     if(!user)
@@ -52,6 +55,18 @@ router.post('/login', async(req,res)=>{
     const token = jwt.sign({_id:user._id,},config.get('JWT_SECRET'))
     
     const notification = await notificationModel.find({user:user._id})
+
+    
+
+    io.on('connection', (socket) => {
+      console.log('A user connected')
+        
+      socket.on('login',(userId)=>{
+        userSockets[userId]=socket
+        console.log(`User ${userId} logged in`)
+      })
+    
+    })
     res.send({token,payload,notification})
 
 })

@@ -12,6 +12,9 @@ const notificationSchema = mongoose.Schema({
     },
     detail:{
         type:String
+    },
+    createdAt:{
+        type:Date
     }
 })
 const notificationModel = mongoose.model('notifications',notificationSchema)

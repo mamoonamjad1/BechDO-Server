@@ -4,8 +4,11 @@ const userModel = require("../models/user");
 const productModel = require("../models/product");
 const notificationModel = require("../models/notification");
 const moment = require("moment");
-const { ObjectId } = require('mongoose').Types;
+const mongoose = require('mongoose')
+const Decimal128 = mongoose.Types.Decimal128;
 
+// const { ObjectId } = require('mongoose').Types;
+// let io = require('../bin/www')
 // async function updateRemainingTime(productId) {
 //   const product = await productModel.findById(productId);
 
@@ -129,52 +132,48 @@ router.post("/start/:id", async (req, res) => {
   }
 });
 
-
-
-
-
-
-
 router.post("/bid", async (req, res) => {
-  const io = req.io;
-  console.log("Bid: ", req.body);
-  const { productID, bidderID, currentPrice } = req.body;
-  const product = await productModel.findById(productID);
-  const bidder = await userModel.findOne({ _id: bidderID, role: "buyer" });
-  console.log("PPPP", product);
-
-  if (product.currentPrice >= currentPrice) {
-    res.send("Bid Should Be Higher than Current And Base Price");
-  } 
+  try {
+    const io = req.io;
+    console.log("Bid: ", req.body);
+    const { productID, bidderID, currentPrice } = req.body;
+    const product = await productModel.findById(productID);
+    const bidder = await userModel.findOne({ _id: bidderID, role: "buyer" });
+    console.log("PPPP", product);
+    const convertedCurrentPrice = Decimal128.fromString(currentPrice);
+    console.log("Converted Price", convertedCurrentPrice);
 
     product.bidder = bidder;
     product.currentPrice = currentPrice;
     console.log("Product Bidder:", product.bidder);
 
-    await product.save()
-    // Create a new notification for the bid and save it in the notificationModel
-    const notification = new notificationModel({
-      user: bidderID,
-      product: productID,
-      detail: `User:${bidder.firstName} placed Bid of ${product.currentPrice} on ${product.name}`,
-    });
-    await notification.save();
+    await product.save();
 
-    // Emit the notification to all users with role 'buyer' except the bidder
+    // Create a new notification for the bid and save it for each buyer
     const buyers = await userModel.find({ role: "buyer" });
-    console.log("Buyer", buyers);
-    // buyers.forEach((buyer) => {
-    //   io.emit("sendNotification", {
-    //     about: `User:${bidder.firstName} placed Bid of ${product.currentPrice} on ${product.name}`,
-    //   });
-    // });
-
-    
-
-    res
-      .status(200)
-      .send(currentPrice);
-  
+    const date = moment().format('YYYY-MM-DD HH:mm:ss');
+    buyers.forEach(async (buyer) => {
+      // if (buyer._id.toString() !== bidderID) {
+        const notification = new notificationModel({
+          user: buyer._id, // Save the notification for each buyer
+          product: productID,
+          detail: `User:${bidder.firstName} placed Bid of ${product.currentPrice} on ${product.name}`,
+          createdAt:date
+        });
+        await notification.save();
+        
+        io.emit('sendNotification', {
+          detail: `User:${bidder.firstName} placed Bid of ${product.currentPrice} on ${product.name}`,
+        });
+      // }
+    });
+    res.status(200).send(currentPrice);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
 });
+
+
 
 module.exports = router;

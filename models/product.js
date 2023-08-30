@@ -34,6 +34,10 @@ owner:{
     type:mongoose.Types.ObjectId,
     ref:'user'
 },
+checkout: {
+  type: Boolean,
+  default: false,
+},
 auctionStarted: {
     type: Boolean,
     default: false,
@@ -47,8 +51,11 @@ auctionStarted: {
   },
   auctionEndTime:{
     type:Date
-  }
-
+  },
+  bidder:{
+    type:mongoose.Types.ObjectId,
+    ref:'user'
+},
 },{timestamps:true})
 
 const productModel = mongoose.model('products' , productSchema)

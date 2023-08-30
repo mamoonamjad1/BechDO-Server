@@ -43,6 +43,7 @@ router.post('/add', uploads.array('images'), async (req, res) => {
       owner: owner,
       category: category,
       images: fileNames, // Save the image file names to the product
+      checkout:'false'
     });
 
     category.products.push(product);
@@ -78,6 +79,45 @@ router.get('/table/:id', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+//Total Earning for Seller
+router.get('/total/earning/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find all products that match the given owner id and meet the specified criteria
+    const products = await productModel.find({
+      owner: id,
+      status: "Finished",
+      auctionEnded: true,
+      checkout: false,
+    });
+
+    // Calculate the total earnings by summing up the currentPrice of these products
+    let totalEarnings = 0;
+    products.forEach((prod) => {
+      const currentPriceStr = prod.currentPrice.toString(); // Convert to string
+      console.log('Current Price (Before Parsing):', currentPriceStr);
+      
+      // Parse as a floating-point number
+      const currentPriceFloat = parseFloat(currentPriceStr);
+      console.log('Current Price (After Parsing):', currentPriceFloat);
+    
+      if (!isNaN(currentPriceFloat)) {
+        totalEarnings += currentPriceFloat;
+      }
+    
+      console.log('Total Earnings:', totalEarnings);
+    });
+    
+
+    // Send the total earnings as a response
+    res.status(200).json({ totalEarnings });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 
 //get live products where auction started is true
 router.get('/get-live', async(req,res)=>{
@@ -128,6 +168,7 @@ router.post('/update/:id',async(req,res)=>{
   product.currentPrice = currentPrice
   product.auctionStarted = auctionStarted
   product.auctionEnded = auctionEnded
+
 
   await product.save()
 })

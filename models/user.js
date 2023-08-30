@@ -17,7 +17,12 @@ const userSchema = mongoose.Schema({
    products:[{
       type:mongoose.Types.ObjectId,
       ref:'products'
-  }]
+  }],
+  notification:[{
+   type:mongoose.Types.ObjectId,
+   ref:'notification'
+  }],
+  socketId: String,
 })
 const userModel = mongoose.model('users', userSchema);
 module.exports = userModel

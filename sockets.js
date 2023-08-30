@@ -9,9 +9,11 @@ const createSocketConnection = (server) => {
         }
     });
 
-    io.on("connection", (socket) => {
-        console.log("User Connected");
-    });
+    // io.on("connection", (socket) => {
+    //     socket.on('message',(data)=>{
+    //         console.log(data)
+    //     })
+    // });
 
     return io;
 };
