@@ -29,7 +29,8 @@ router.post('/register', async(req,res)=>{
     res.send("User Successfully Registered")
 })
 
-router.post('/login', socket, async(req,res)=>{
+router.post('/login', async(req,res)=>{
+    console.log(req.body)
     const {email,password} = req.body;
     const io=  req.io
     const userSockets = {};
@@ -54,20 +55,18 @@ router.post('/login', socket, async(req,res)=>{
     }
     const token = jwt.sign({_id:user._id,},config.get('JWT_SECRET'))
     
-    const notification = await notificationModel.find({user:user._id})
+    // const notification = await notificationModel.find({user:user._id})
 
-    
-
-    io.on('connection', (socket) => {
-      console.log('A user connected')
+    // io.on('connection', (socket) => {
+    //   console.log('A user connected')
         
-      socket.on('login',(userId)=>{
-        userSockets[userId]=socket
-        console.log(`User ${userId} logged in`)
-      })
+    //   socket.on('login',(userId)=>{
+    //     userSockets[userId]=socket
+    //     console.log(`User ${userId} logged in`)
+    //   })
     
-    })
-    res.send({token,payload,notification})
+    // })
+    res.send({token,payload})
 
 })
 

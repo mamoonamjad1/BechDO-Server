@@ -8,6 +8,7 @@ const croneJobs = require('./cron/timer')
 let database = require('./DataBase/dbConnect')
 const http=require('http');
 const { createSocketConnection } = require('./sockets');
+const { Server } = require('socket.io');
 
 let usersRouter = require('./routes/userAuth');
 let sellerRouter = require('./routes/sellerAuth');
@@ -20,7 +21,18 @@ let notificationRouter = require('./routes/notification');
 const app = express();
 
 const server=http.createServer(app)
-const io=createSocketConnection(server);
+// const io=createSocketConnection(server);
+const io = new Server(server, {
+  cors: {
+      origin: "http://localhost:3000", // Update this with your frontend URL
+      methods: ['POST', 'GET', 'PUT', 'PATCH', 'DELETE'],
+      credentials: true,
+  }
+});
+
+// server.listen(port);
+// server.on('error', onError);
+// server.on('listening', onListening);
 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -49,7 +61,13 @@ app.use('/product', productRouter);
 app.use('/auction', auctionRouter);
 app.use('/notifications', notificationRouter);
 
-
+io.of("/abc").on("connect",(socket)=>{
+  console.log("Joining")
+  socket.on("join",(data,callback)=>{
+    console.log("Join",data)
+    socket.join(data.userId)
+  })
+})
 
 database();
 
@@ -66,7 +84,7 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-module.exports = {app,server};
+module.exports = {app,server, io};
 
 
 
