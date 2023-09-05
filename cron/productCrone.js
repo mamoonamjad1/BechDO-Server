@@ -1,7 +1,8 @@
 const productModel = require("../models/product");
 const userModel = require("../models/user");
-
-module.exports.productCrone = async function (io) { // Accept io as an argument
+const io = require("../server").io
+const orderModel = require('../models/order')
+module.exports.productCrone = async function () { 
   try {
     const currentTime = new Date();
 
@@ -23,24 +24,23 @@ module.exports.productCrone = async function (io) { // Accept io as an argument
       });
 
       // Find the bidder's user ID
-      const user = await userModel.findById({ _id: product.bidder, role: 'buyer' });
+      let user = await userModel.findById({ _id: product.bidder, role: 'buyer' });
       console.log("YOLO",user._id)
-      
-      // io.of("/abc").to("12345").emit("message",
-    // {
-    //   productId: product._id,
-    //   currentPrice: product.currentPrice,
-    //   name: product.name,
-    //   quantity: product.quantity
-    // })
+      user = JSON.parse(JSON.stringify(user))
+    io.of("/win").to(user?._id).emit("message",
+    {
+      productId: product._id,
+      currentPrice: product.currentPrice,
+      name: product.name,
+      quantity: product.quantity,
 
-      // Emit a socket message to the bidder for each product
-      // io.to(user.socketId).emit("winning", {
-      //   productId: product._id,
-      //   currentPrice: product.currentPrice,
-      //   name: product.name,
-      //   quantity: product.quantity
-      // });
+    })
+
+    const order = await orderModel.create({
+      seller:product.owner,
+      buyer:product.bidder,
+      products:product,
+    })
     }
   } catch (error) {
     console.error(error);

@@ -62,7 +62,7 @@ router.post('/add', uploads.array('images'), async (req, res) => {
 //Get all products
 router.get('/get/:id', async(req,res)=>{
   const { id } = req.params
-  console.log(id)
+  //console.log(id)
   const products = await productModel.find({owner: id , status:'InActive'})
   res.status(200).send(products)
 })
@@ -75,7 +75,7 @@ router.get('/table/:id', async (req, res) => {
     const products = await productModel.find({ owner: id , status:"Finished" , auctionEnded:'true' });
     res.status(200).send(products);
   } catch (error) {
-    console.error(error);
+    //console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
@@ -96,17 +96,17 @@ router.get('/total/earning/:id', async (req, res) => {
     let totalEarnings = 0;
     products.forEach((prod) => {
       const currentPriceStr = prod.currentPrice.toString(); // Convert to string
-      console.log('Current Price (Before Parsing):', currentPriceStr);
+     // console.log('Current Price (Before Parsing):', currentPriceStr);
       
       // Parse as a floating-point number
       const currentPriceFloat = parseFloat(currentPriceStr);
-      console.log('Current Price (After Parsing):', currentPriceFloat);
+      //console.log('Current Price (After Parsing):', currentPriceFloat);
     
       if (!isNaN(currentPriceFloat)) {
         totalEarnings += currentPriceFloat;
       }
     
-      console.log('Total Earnings:', totalEarnings);
+      //console.log('Total Earnings:', totalEarnings);
     });
     
 
@@ -135,11 +135,11 @@ router.get('/get-single/:id', async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    console.log('Fetched product:', product);
+    //console.log('Fetched product:', product);
 
     res.status(200).json(product.toObject());
   } catch (error) {
-    console.error('Error fetching product:', error);
+    //console.error('Error fetching product:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

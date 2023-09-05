@@ -2,7 +2,7 @@ const express =  require('express')
 const router = express.Router()
 const categoryModel = require('../models/categories')
 const upload = require('../middlewares/multer')
-const {io} = require("../app")
+const io = require("../server").io
 
 router.post('/add', upload.single('image'),async(req,res)=>{
 
@@ -28,7 +28,7 @@ router.get('/get', async(req,res)=>{
     console.log("INSIDE")
     const categories = await categoryModel.find()
 
-io.of("/abc").emit("message",{data:"here we"})
+// io.of("/abc").emit("message",{data:"here we"})
 
     res.status(200).send(categories)
 })

@@ -32,7 +32,7 @@ currentPrice:{
 },
 owner:{
     type:mongoose.Types.ObjectId,
-    ref:'user'
+    ref:'users'
 },
 checkout: {
   type: Boolean,
@@ -54,7 +54,7 @@ auctionStarted: {
   },
   bidder:{
     type:mongoose.Types.ObjectId,
-    ref:'user'
+    ref:'users'
 },
 },{timestamps:true})
 
