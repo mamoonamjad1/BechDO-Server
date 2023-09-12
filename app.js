@@ -1,7 +1,7 @@
 const app = require("./server").app;
 const io = require("./server").io;
 const express = require("express")
-
+require ('dotenv').config()
 let usersRouter = require('./routes/userAuth');
 let sellerRouter = require('./routes/sellerAuth');
 let categoryRouter = require('./routes/categories');
@@ -9,6 +9,7 @@ let productRouter = require('./routes/product');
 let auctionRouter = require('./routes/auction');
 let notificationRouter = require('./routes/notification');
 let orderRouter = require('./routes/order')
+let paymentRouter = require('./routes/payment')
 let database = require('./DataBase/dbConnect')
 const croneJobs = require('./cron/timer')
 
@@ -28,6 +29,7 @@ app.use('/product', productRouter);
 app.use('/auction', auctionRouter);
 app.use('/notifications', notificationRouter);
 app.use('/order',orderRouter)
+app.use('/payment',paymentRouter)
 
 io.of("/win").on("connect",(socket)=>{
   console.log("Joining")

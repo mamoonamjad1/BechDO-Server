@@ -3,7 +3,8 @@ const router = express.Router();
 const orderModel = require("../models/order");
 const userModel = require("../models/user");
 const productModel = require("../models/product");
-const nodemailer = require('nodemailer');
+const nodemailer = require("nodemailer");
+const xl = require('excel4node');
 
 router.get("/get/:id", async (req, res) => {
   const { id } = req.params;
@@ -23,8 +24,9 @@ router.get("/get/:id", async (req, res) => {
 
 router.post("/address/:id", async (req, res) => {
   const { id } = req.params;
-  const { firstName, lastName, email, phone, address, city, postalCode } = req.body;
-  
+  const { firstName, lastName, email, phone, address, city, postalCode } =
+    req.body;
+
   try {
     // Find all orders where the buyer is 'id' and the status is 'UnPaid'
     const orders = await orderModel.find({ buyer: id, status: "UnPaid" });
@@ -40,6 +42,7 @@ router.post("/address/:id", async (req, res) => {
           address: address,
           city: city,
           postalCode: postalCode,
+          deliveryStatus: "Recieved",
         },
       });
     });
@@ -83,28 +86,34 @@ router.get("/single/:id", async (req, res) => {
   }
 });
 
-router.get("/delivery/:id",async(req,res)=>{
-const {id } = req.params
-console.log(id)
-  const orders =  await orderModel.find({seller:id, status:'Paid'})
-  .populate('products')
-  console.log(orders)
-  res.status(200).send(orders)
-
-})
+router.get("/delivery/:id", async (req, res) => {
+  const { id } = req.params;
+  console.log(id);
+  const orders = await orderModel
+    .find({
+      seller: id,
+      status: "Paid",
+      $or: [{ deliveryStatus: "Recieved" }, { deliveryStatus: "InTransit" }],
+    })
+    .populate("products");
+  res.status(200).send(orders);
+});
 
 // Define a route to update the order status and send an email
-router.post('/update-status/:id', async (req, res) => {
-
+router.post("/update-status/:id", async (req, res) => {
   const { id } = req.params;
   const { status } = req.body; // Assuming you send the new status in the request body
-  console.log("Order ID",id)
-  console.log("Status",status)
+  console.log("Order ID", id);
+  console.log("Status", status);
   try {
     //Find the order by its ID
-    const order = await orderModel.findById(id).populate('buyer').populate('seller').populate('products');
+    const order = await orderModel
+      .findById(id)
+      .populate("buyer")
+      .populate("seller")
+      .populate("products");
     if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
+      return res.status(404).json({ message: "Order not found" });
     }
 
     // Update the order status
@@ -112,7 +121,7 @@ router.post('/update-status/:id', async (req, res) => {
 
     // Save the updated order
     await order.save();
-let testAccount = await nodemailer.createTestAccount();
+    //let testAccount = await nodemailer.createTestAccount();
     // Send an email to the buyer
     // const transporter = nodemailer.createTransport({
     //   // Configure your email service here (e.g., Gmail, SMTP server)
@@ -126,36 +135,91 @@ let testAccount = await nodemailer.createTestAccount();
     //   // },
     // });
 
-    let transporter = nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false, // true for 465, false for other ports
-      auth: {
-          user: testAccount.user, // generated ethereal user
-          pass: testAccount.pass  // generated ethereal password
-      }
-  });
+    //   let transporter = nodemailer.createTransport({
+    //     host: 'smtp.ethereal.email',
+    //     port: 587,
+    //     secure: false, // true for 465, false for other ports
+    //     auth: {
+    //         user: testAccount.user, // generated ethereal user
+    //         pass: testAccount.pass  // generated ethereal password
+    //     }
+    // });
 
-    const mailOptions = {
-      from: `${order.seller.email}`, // Sender's email address
-      to: `mamoon.amjad17@gmail.com`, // Buyer's email address (use order.email or the appropriate field)
-      subject: 'Order Status Update',
-      text: `The Status for yout order of ${order.products.name} has been updated to ${status}.`,
-    };
+    //   const mailOptions = {
+    //     from: `${order.seller.email}`, // Sender's email address
+    //     to: `mamoon.amjad17@gmail.com`, // Buyer's email address (use order.email or the appropriate field)
+    //     subject: 'Order Status Update',
+    //     text: `The Status for yout order of ${order.products.name} has been updated to ${status}.`,
+    //   };
 
-    // Send the email
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error('Error sending email:', error);
-        return res.status(500).json({ message: 'Error sending email' });
-      }
-      console.log('Email sent:', info.response);
-      res.status(200).json({ message: 'Order status updated and email sent' });
-    });
+    //   // Send the email
+    //   transporter.sendMail(mailOptions, (error, info) => {
+    //     if (error) {
+    //       console.error('Error sending email:', error);
+    //       return res.status(500).json({ message: 'Error sending email' });
+    //     }
+    //     console.log('Email sent:', info.response);
+    res.status(200).json({ message: "Order status updated and email sent" });
+    //});
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
+
+router.get('/generate-excel', (req, res) => {
+  // Create a new workbook and worksheet
+  const wb = new excel.Workbook();
+  const ws = wb.addWorksheet('Orders');
+
+  // Define column headers
+  const headerStyle = wb.createStyle({
+    font: {
+      color: '#FFFFFF',
+    },
+    fill: {
+      type: 'pattern',
+      patternType: 'solid',
+      bgColor: '#000000',
+    },
+  });
+
+  ws.cell(1, 1).string('Order ID').style(headerStyle);
+  ws.cell(1, 2).string('Customer Name').style(headerStyle);
+  ws.cell(1, 3).string('Customer Phone').style(headerStyle);
+  ws.cell(1, 4).string('Delivery Address').style(headerStyle);
+  ws.cell(1, 5).string('Delivery Status').style(headerStyle);
+  ws.cell(1, 6).string('Product Name').style(headerStyle);
+  ws.cell(1, 7).string('Quantity').style(headerStyle);
+  ws.cell(1, 8).string('Price').style(headerStyle);
+
+  // Insert data into the worksheet
+  const data = deliveries.map((delivery, index) => [
+    delivery._id,
+    `${delivery.firstName} ${delivery.lastName}`,
+    delivery.phone,
+    `${delivery.address}, ${delivery.city}`,
+    delivery.deliveryStatus,
+    delivery.products.name,
+    delivery.products.quantity,
+    delivery.products.currentPrice.$numberDecimal.toString(),
+  ]);
+
+  ws.cell(2, 1, data.length + 1, data[0].length, true).string().rows(data);
+
+  // Set the response headers
+  res.setHeader(
+    'Content-Disposition',
+    'attachment; filename=Orders.xlsx'
+  );
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+  // Send the Excel file to the client
+  wb.writeToBuffer().then((buffer) => {
+    res.send(buffer);
+  });
+});
+
+module.exports = router;
 
 module.exports = router;
