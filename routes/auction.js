@@ -101,7 +101,6 @@ const Decimal128 = mongoose.Types.Decimal128;
 
 
 router.post("/start/:id", async (req, res) => {
-  console.log("In the route")
   const { id } = req.params;
   console.log("In the route")
   try {

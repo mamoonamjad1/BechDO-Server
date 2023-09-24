@@ -43,12 +43,12 @@ router.post("/address/:id", async (req, res) => {
           city: city,
           postalCode: postalCode,
           deliveryStatus: "Recieved",
+          status: "Paid",
         },
       });
     });
 
     await Promise.all(updatePromises);
-
     res.status(200).send("Address updated for all orders");
   } catch (error) {
     console.error(error);
