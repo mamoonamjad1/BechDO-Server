@@ -7,10 +7,11 @@ const stripe = require('stripe')('sk_test_51NsLBADMF5rirMzQtW4DwVuFBqz4jhhf2j0m8
 router.post("/make", async (req, res) => {
   console.log("Request:", req.body);
   const {tokenId,price } = req.body
+  const value = price * 100;
     try{
     stripe.charges.create(
         {
-          amount: price,
+          amount: value,
           currency: 'usd',
           source: tokenId,
           //description: `Payment for ${product.title}`,

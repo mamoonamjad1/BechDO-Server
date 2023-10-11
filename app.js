@@ -10,6 +10,7 @@ let auctionRouter = require('./routes/auction');
 let notificationRouter = require('./routes/notification');
 let orderRouter = require('./routes/order')
 let paymentRouter = require('./routes/payment')
+let adminRouteUser = require('./adminRoutes/user')
 let database = require('./DataBase/dbConnect')
 const croneJobs = require('./cron/timer')
 
@@ -30,6 +31,11 @@ app.use('/auction', auctionRouter);
 app.use('/notifications', notificationRouter);
 app.use('/order',orderRouter)
 app.use('/payment',paymentRouter)
+
+//Admin Routes
+app.use('/admin/users',adminRouteUser);
+app.use('/admin/orders',require('./adminRoutes/order'));
+app.use('/admin/products',require('./adminRoutes/product'));
 
 io.of("/win").on("connect",(socket)=>{
   console.log("Joining")

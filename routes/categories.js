@@ -33,4 +33,10 @@ router.get('/get', async(req,res)=>{
     res.status(200).send(categories)
 })
 
+router.delete('/delete/:id',async(req,res)=>{
+    const {id} = req.params
+    await categoryModel.findByIdAndDelete(id)
+    res.status(200).send("Deleted")
+})
+
 module.exports = router
