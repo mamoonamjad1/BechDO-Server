@@ -157,6 +157,7 @@ router.get('/category/:id',async(req,res)=>{
 
 //update single product
 router.post('/update/:id',async(req,res)=>{
+
   const { id } = req.params
   const { name , basePrice, quantity, description, currentPrice , auctionStarted , auctionEnded} = req.body
   const product = await productModel.findById(id)
@@ -169,9 +170,53 @@ router.post('/update/:id',async(req,res)=>{
   product.auctionStarted = auctionStarted
   product.auctionEnded = auctionEnded
 
-
   await product.save()
 })
+
+router.put('/update-single/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const product = await productModel.findById(id);
+
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    const updateFields = {};
+
+    if (req.body.name) {
+      updateFields.name = req.body.name;
+    }
+
+    if (req.body.basePrice) {
+      updateFields.basePrice = req.body.basePrice;
+    }
+
+    if (req.body.quantity) {
+      updateFields.quantity = req.body.quantity;
+    }
+
+    if (req.body.description) {
+      updateFields.description = req.body.description;
+    }
+
+    if (req.body.currentPrice) {
+      updateFields.currentPrice = req.body.currentPrice;
+    }
+
+    const updatedProduct = await productModel.findByIdAndUpdate(
+      id,
+      { $set: updateFields },
+      { new: true }
+    );
+
+    return res.json({ message: 'Product updated successfully', product: updatedProduct });
+  } catch (error) {
+    console.error('Error updating product:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
 
 
 //delete a product

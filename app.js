@@ -36,6 +36,7 @@ app.use('/payment',paymentRouter)
 app.use('/admin/users',adminRouteUser);
 app.use('/admin/orders',require('./adminRoutes/order'));
 app.use('/admin/products',require('./adminRoutes/product'));
+app.use('/admin/auth',require('./adminRoutes/auth'));
 
 io.of("/win").on("connect",(socket)=>{
   console.log("Joining")
