@@ -67,6 +67,12 @@ router.get('/get/:id', async(req,res)=>{
   res.status(200).send(products)
 })
 
+//Get all products
+router.get('/upcoming', async(req,res)=>{
+  const products = await productModel.find({ status:'InActive'})
+  res.status(200).send(products)
+})
+
 //Products for single user
 router.get('/table/:id', async (req, res) => {
   try {

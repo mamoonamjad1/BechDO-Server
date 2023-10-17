@@ -23,6 +23,7 @@ const userSchema = mongoose.Schema({
    ref:'notification'
   }],
   socketId: String,
+  accountId:String,
 })
 const userModel = mongoose.model('users', userSchema);
 module.exports = userModel
