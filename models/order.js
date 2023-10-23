@@ -35,7 +35,11 @@ const orderSchema = mongoose.Schema({
     products:{
         type:mongoose.Types.ObjectId,
         ref:'products'
-    }
+    },
+    checkout: {
+        type: Boolean,
+        default: false,
+      },
 })
 
 const orderModel = mongoose.model('order',orderSchema)

@@ -6,6 +6,7 @@ const userModel = require('../models/user');
 const productModel = require('../models/product');
 const uploads = require('../middlewares/productMulter');
 const xl = require('excel4node');
+const orderModel = require('../models/order');
 
 // Define the route to add a new product
 router.post('/add', uploads.array('images'), async (req, res) => {
@@ -67,7 +68,7 @@ router.get('/get/:id', async(req,res)=>{
   res.status(200).send(products)
 })
 
-//Get all products
+//Get all upcoming auctions
 router.get('/upcoming', async(req,res)=>{
   const products = await productModel.find({ status:'InActive'})
   res.status(200).send(products)
@@ -85,23 +86,23 @@ router.get('/table/:id', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 //Total Earning for Seller
 router.get('/total/earning/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
     // Find all products that match the given owner id and meet the specified criteria
-    const products = await productModel.find({
-      owner: id,
-      status: "Finished",
-      auctionEnded: true,
-      checkout: false,
-    });
+    const order = await orderModel.find({
+      seller: id,
+      status: 'Paid',
+      checkout: false
+    }).populate('products');
 
     // Calculate the total earnings by summing up the currentPrice of these products
     let totalEarnings = 0;
-    products.forEach((prod) => {
-      const currentPriceStr = prod.currentPrice.toString(); // Convert to string
+    order.forEach((order) => {
+      const currentPriceStr = order.products.currentPrice.toString(); // Convert to string
      // console.log('Current Price (Before Parsing):', currentPriceStr);
       
       // Parse as a floating-point number
@@ -149,8 +150,6 @@ router.get('/get-single/:id', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-
-
 
 
 //find product of one category
@@ -231,6 +230,32 @@ router.delete('/delete/:id' , async(req,res)=>{
   const product = await productModel.findByIdAndDelete(id)
   res.status(200).send("Item Deleted Successfully")
 })
+
+
+
+// Search product
+router.get('/search', async (req, res) => {
+  const query = req.body.query; // Get the search query from the request body
+
+  try {
+    // Use the provided query to search for products
+    const products = await productModel.find({
+      auctionStarted: true,
+      auctionEnded: false,
+      name: {
+        $regex: new RegExp(query, 'i'), // Use the 'query' variable instead of 'product'
+      }
+    });
+
+    res.send(products);
+  } catch (error) {
+    console.error('Error in product search:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
+
 
 //generate excel file
 router.get('/generate-excel/:id', async (req, res) => {

@@ -34,10 +34,6 @@ owner:{
     type:mongoose.Types.ObjectId,
     ref:'users'
 },
-checkout: {
-  type: Boolean,
-  default: false,
-},
 auctionStarted: {
     type: Boolean,
     default: false,

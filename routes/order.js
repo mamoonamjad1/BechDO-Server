@@ -167,6 +167,40 @@ router.post("/update-status/:id", async (req, res) => {
   }
 });
 
+router.post('/update-checkout/:id', async (req, res) => {
+  console.log("In the route")
+  const { id } = req.params;
+  try {
+    // Find all orders for the specified seller with status 'Paid'
+    const orders = await orderModel.find({ seller: id, status: 'Paid',checkout:false });
+
+    // Check if there are orders to update
+    if (orders.length === 0) {
+      return res.status(404).json({ message: 'No orders with status Paid found for the seller.' });
+    }
+
+    // Use Promise.all to concurrently update the orders
+    const updatePromises = orders.map(async (order) => {
+      await orderModel.findByIdAndUpdate(order._id, {
+        $set: {
+          checkout: true,
+        },
+      });
+    });
+
+    // Wait for all update operations to complete
+    await Promise.all(updatePromises);
+
+    res.status(200).json({ message: 'Orders updated successfully.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error.' });
+  }
+});
+
+
+
+
 router.get('/generate-excel', (req, res) => {
   // Create a new workbook and worksheet
   const wb = new excel.Workbook();
@@ -222,4 +256,3 @@ router.get('/generate-excel', (req, res) => {
 
 module.exports = router;
 
-module.exports = router;
