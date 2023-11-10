@@ -15,6 +15,9 @@ router.post('/add', uploads.array('images'), async (req, res) => {
     const fileNames = req.files.map((file) => file.filename);
     const {
       name,
+      make,
+      model,
+      variant,
       description,
       quantity,
       duration,
@@ -36,6 +39,9 @@ router.post('/add', uploads.array('images'), async (req, res) => {
 
     const product = await productModel.create({
       name,
+      make,
+      model,
+      variant,
       description,
       quantity,
       duration,
@@ -136,7 +142,7 @@ router.get('/get-live', async(req,res)=>{
 router.get('/get-single/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const product = await productModel.findById(id);
+    const product = await productModel.findById(id).populate('category');
 
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
@@ -208,6 +214,19 @@ router.put('/update-single/:id', async (req, res) => {
 
     if (req.body.currentPrice) {
       updateFields.currentPrice = req.body.currentPrice;
+    }
+
+    if (req.body.duration) {
+      const durationInSeconds = parseInt(req.body.duration, 10);
+      
+      // Calculate new auction start and end times based on the provided duration
+      const now = new Date();
+      const auctionStartTime = now;
+      const auctionEndTime = new Date(now.getTime() + durationInSeconds * 1000);
+
+      updateFields.duration = durationInSeconds;
+      updateFields.auctionStartTime = auctionStartTime;
+      updateFields.auctionEndTime = auctionEndTime;
     }
 
     const updatedProduct = await productModel.findByIdAndUpdate(

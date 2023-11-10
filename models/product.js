@@ -2,6 +2,9 @@ const mongoose = require('mongoose')
 
 const productSchema = mongoose.Schema({
 name:String,
+make:String,
+model:String,
+variant:String,
 description:String,
 quantity:Number,
 category:{

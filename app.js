@@ -10,6 +10,8 @@ let auctionRouter = require('./routes/auction');
 let notificationRouter = require('./routes/notification');
 let orderRouter = require('./routes/order')
 let paymentRouter = require('./routes/payment')
+let partsRouter = require('./routes/parts')
+let carRouter = require('./routes/cars')
 let adminRouteUser = require('./adminRoutes/user')
 let database = require('./DataBase/dbConnect')
 const croneJobs = require('./cron/timer')
@@ -27,10 +29,12 @@ app.use('/users', usersRouter);
 app.use('/seller', sellerRouter);
 app.use('/categories', categoryRouter);
 app.use('/product', productRouter);
+app.use('/parts', partsRouter);
 app.use('/auction', auctionRouter);
 app.use('/notifications', notificationRouter);
 app.use('/order',orderRouter)
 app.use('/payment',paymentRouter)
+app.use('/cars',carRouter)
 
 //Admin Routes
 app.use('/admin/users',adminRouteUser);

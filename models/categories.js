@@ -7,7 +7,11 @@ const categorySchema = mongoose.Schema({
     products:[{
         type:mongoose.Types.ObjectId,
         ref:'products'
-    }]
+    }],
+    parts:[{
+        type:mongoose.Types.ObjectId,
+        ref:'parts'
+    }],
 })
 
 const categoryModel = mongoose.model('categories', categorySchema)
