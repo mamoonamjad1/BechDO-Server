@@ -29,31 +29,99 @@ router.post('/register', async(req,res)=>{
     res.send("User Successfully Registered")
 })
 
-router.post('/login', async(req,res)=>{
-    console.log(req.body)
-    const {email,password} = req.body;
-    const io=  req.io
+router.post('/login', async (req, res) => {
+    console.log(req.body);
+
+    const io = req.io;
     const userSockets = {};
 
-    const user = await userModel.findOne({email})
-    if(!user)
-    return res.status(400).send("User Is Not Registered")
-    if(user.role == 'seller'){
-        res.status(400).send("Not Authorised")
-    }
-    const hasedPassword = await bcrypt.compare(password,user.password)
-    if(!hasedPassword)
-    {
-        return res.status(400).send("Passwords Do Not Match")
-    }
+    if (req.body.authType && req.body.authType.toLowerCase() === 'google') {
+        const { profile } = req.body;
+        console.log("Profile: ", profile);
 
-    const payload={
-        _id:user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email
+        try {
+            let user = await userModel.findOne({ googleAuth: profile.id, role: 'buyer'  });
+            console.log("User: ", user)
+            if (!user) {
+                const newUser = await userModel.create({
+                    firstName: profile.given_name,
+                    lastName: profile.family_name,
+                    email: profile.email,
+                    googleAuth: profile.id,
+                    role: 'buyer'
+                });
+
+                console.log("USER CREATED: ", user)
+
+                const payload = {
+                    _id: user._id,
+                    firstName: newUser.firstName,
+                    lastName: newUser.lastName,
+                    email: newUser.email
+                };
+
+                const token = jwt.sign({ _id: user._id }, config.get('JWT_SECRET'));
+
+                return res.send({ token, payload });
+            }else{
+
+            const payload = {
+                _id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email
+            };
+
+            const token = jwt.sign({ _id: user._id }, config.get('JWT_SECRET'));
+
+            return res.send({ token, payload });
+        }
+        } catch (error) {
+            console.error(error);
+            return res.status(500).send("Internal Server Error");
+        }
+    } else {
+        const { email, password } = req.body;
+
+        try {
+            const user = await userModel.findOne({ email });
+
+            if (!user) {
+                return res.status(400).send("User Is Not Registered");
+            }
+
+            if (user.role === 'seller') {
+                return res.status(400).send("Not Authorized");
+            }
+
+            const isPasswordValid = await bcrypt.compare(password, user.password);
+
+            if (!isPasswordValid) {
+                return res.status(400).send("Passwords Do Not Match");
+            }
+
+            const payload = {
+                _id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email
+            };
+
+            const token = jwt.sign({ _id: user._id }, config.get('JWT_SECRET'));
+
+            return res.send({ token, payload });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).send("Internal Server Error");
+        }
     }
-    const token = jwt.sign({_id:user._id,},config.get('JWT_SECRET'))
+});
+
+
+
+
+module.exports = router
+
     
     // const notification = await notificationModel.find({user:user._id})
 
@@ -66,8 +134,3 @@ router.post('/login', async(req,res)=>{
     //   })
     
     // })
-    res.send({token,payload})
-
-})
-
-module.exports = router

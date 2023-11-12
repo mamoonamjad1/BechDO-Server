@@ -24,6 +24,7 @@ const userSchema = mongoose.Schema({
   }],
   socketId: String,
   accountId:String,
+  googleAuth:String,
 })
 const userModel = mongoose.model('users', userSchema);
 module.exports = userModel

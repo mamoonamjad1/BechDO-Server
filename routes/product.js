@@ -74,6 +74,14 @@ router.get('/get/:id', async(req,res)=>{
   res.status(200).send(products)
 })
 
+//Get all products for a single user where auction started is true
+router.get('/get/store/:id', async(req,res)=>{
+  const { id } = req.params
+  //console.log(id)
+  const products = await productModel.find({owner: id , status:'Active',auctionEnded:'false', auctionStarted:'true'}).populate('category').populate('owner')
+  res.status(200).send(products)
+})
+
 //Get all upcoming auctions
 router.get('/upcoming', async(req,res)=>{
   const products = await productModel.find({ status:'InActive'})
@@ -142,7 +150,7 @@ router.get('/get-live', async(req,res)=>{
 router.get('/get-single/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const product = await productModel.findById(id).populate('category');
+    const product = await productModel.findById(id).populate('category').populate('owner');
 
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
