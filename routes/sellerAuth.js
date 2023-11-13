@@ -8,6 +8,9 @@ const upload = require("../middlewares/multer");
  const stripe = require("stripe")(
     "sk_test_51NsLBADMF5rirMzQtW4DwVuFBqz4jhhf2j0m8yoVxbCKdhuxM7Zxx8rcMvtP8FviigPEHF9Y10SqY05giTrUazzU00Nf9RXF5t"
   );
+  const nodemailer = require("nodemailer");
+  const crypto = require("crypto");
+
 
   router.post("/register", upload.single("image"), async (req, res) => {
     const {
@@ -33,9 +36,10 @@ const upload = require("../middlewares/multer");
     if (userAlreadyRegistered)
       return res.status(400).send("User Already Registered");
   
+    const verificationToken = crypto.randomBytes(20).toString('hex');
     const hashedPassword = await bcrypt.hash(password, 12);
-    const hashedConfirmPassword = await bcrypt.hash(confirmPassword, 12);
   
+    // Save the verification token to the user document
     const user = await userModel.create({
       firstName,
       lastName,
@@ -43,13 +47,102 @@ const upload = require("../middlewares/multer");
       phoneNumber,
       address,
       password: hashedPassword,
-      confirmPassword: hashedConfirmPassword,
+      confirmPassword: hashedPassword, // Store the hashed password for confirmPassword for simplicity
       image: url + "/images/" + req.file.filename,
       role: "seller",
+      verificationToken: verificationToken,
+      verificationTokenExpires: Date.now() + 3600000, // 1 hour expiration
     });
   
-    res.send("User Successfully Registered");
-  });
+// Send verification email
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+      user: "abdullahkhalid1398@gmail.com",
+      pass: "nmgychjrljcvjnxq"
+  }
+});
+
+  
+    const mailOptions = {
+        to: email,
+        subject: 'Email Verification',
+        html: `<p>Click on the following link to verify your email: <a href="http://localhost:4000/seller/verify/${verificationToken}">http://localhost:4000/seller/verify/${verificationToken}</a></p>`,
+    };
+  
+    transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+            console.error(error);
+            return res.status(500).send("Failed to send verification email");
+        }
+        console.log(`Email sent: ${info.response}`);
+        res.send("Seller Registered. Please check your email for verification.");
+    });
+});
+
+// Add a route for handling the verification link
+router.get('/verify/:token', async (req, res) => {
+    const token = req.params.token;
+  
+    const user = await userModel.findOne({
+        verificationToken: token,
+        verificationTokenExpires: { $gt: Date.now() }, // Check if the token is still valid
+    });
+  
+    if (!user) {
+        return res.status(400).send("Invalid or expired token");
+    }
+  
+    // Update the user document to mark email as verified
+    user.verified = true;
+    user.verificationToken = undefined;
+    user.verificationTokenExpires = undefined;
+    await user.save();
+  
+    res.send("Email verified successfully. You can now log in.");
+});
+
+  // router.post("/register", upload.single("image"), async (req, res) => {
+  //   const {
+  //     firstName,
+  //     lastName,
+  //     address,
+  //     email,
+  //     phoneNumber,
+  //     password,
+  //     confirmPassword,
+  //   } = req.body;
+  
+  //   const url = req.protocol + "://" + req.get("host");
+  
+  //   if (password !== confirmPassword)
+  //     return res.status(400).send("Passwords Do Not Match");
+  
+  //   const userAlreadyRegistered = await userModel.findOne({
+  //     email: email,
+  //     role: "seller",
+  //   });
+  
+  //   if (userAlreadyRegistered)
+  //     return res.status(400).send("User Already Registered");
+  
+  //   const hashedPassword = await bcrypt.hash(password, 12);
+  //   const hashedConfirmPassword = await bcrypt.hash(confirmPassword, 12);
+  
+  //   const user = await userModel.create({
+  //     firstName,
+  //     lastName,
+  //     email,
+  //     phoneNumber,
+  //     address,
+  //     password: hashedPassword,
+  //     confirmPassword: hashedConfirmPassword,
+  //     image: url + "/images/" + req.file.filename,
+  //     role: "seller",
+  //   });
+  
+  //   res.send("User Successfully Registered");
+  // });
   
 
 router.post("/login", async (req, res) => {
@@ -59,6 +152,9 @@ router.post("/login", async (req, res) => {
   const user = await userModel.findOne({ email, role: "seller" });
   if (!user) {
     return res.status(400).send("User Is Not Registered");
+  }
+  if(user.verified===false){
+    return res.status(400).send("Please Verify Your Email First");
   }
   const hasedPassword = await bcrypt.compare(password, user.password);
   if (!hasedPassword) {

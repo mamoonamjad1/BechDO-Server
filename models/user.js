@@ -25,6 +25,16 @@ const userSchema = mongoose.Schema({
   socketId: String,
   accountId:String,
   googleAuth:String,
+  verified: {
+   type: Boolean,
+   default: false,
+},
+verificationToken: {
+   type: String,
+},
+verificationTokenExpires: {
+   type: Date,
+},
 })
 const userModel = mongoose.model('users', userSchema);
 module.exports = userModel
