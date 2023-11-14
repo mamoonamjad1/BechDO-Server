@@ -102,6 +102,134 @@ router.get('/verify/:token', async (req, res) => {
     res.send("Email verified successfully. You can now log in.");
 });
 
+
+
+router.post("/login", async (req, res) => {
+  console.log("Req", req.body);
+  const { email, password } = req.body;
+
+  const user = await userModel.findOne({ email, role: "seller" });
+  if (!user) {
+    return res.status(400).send("User Is Not Registered");
+  }
+  if(user.verified===false){
+    return res.status(400).send("Please Verify Your Email First");
+  }
+  const hasedPassword = await bcrypt.compare(password, user.password);
+  if (!hasedPassword) {
+    return res.status(400).send("Passwords Do Not Match");
+  }
+  console.log("eee", user);
+  const token = jwt.sign(
+    {
+      _id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      address: user.address,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      image: user.image,
+    },
+    config.get("JWT_SELLER")
+  );
+
+  res.send({ token, firstName: user.firstName });
+});
+
+
+router.put('/edit/profile/:id', upload.single("image"),async (req, res) => {
+  console.log(req.body);
+  const { firstName, lastName, email, phoneNumber, address,password,confirmPassword , image } = req.body;
+  const id = req.params.id;
+
+  try {
+      const user = await userModel.findById(id);
+
+      if (!user) {
+          return res.status(404).send("User not found");
+      }
+
+      if (firstName) {
+          user.firstName = firstName;
+      }
+
+      if (lastName) {
+          user.lastName = lastName;
+      }
+
+      if (email && email !== user.email) {
+        // If the email is being updated, send a verification email
+        const verificationToken = crypto.randomBytes(20).toString('hex');
+        user.verificationToken = verificationToken;
+        user.verificationTokenExpires = Date.now() + 3600000; // 1 hour expiration
+  
+        // Send verification email
+        const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: "abdullahkhalid1398@gmail.com",
+            pass: "nmgychjrljcvjnxq"
+          }
+        });
+  
+        const mailOptions = {
+          to: email,
+          subject: 'Email Verification',
+          html: `<p>Click on the following link to verify your email: <a href="http://localhost:4000/seller/verify/${verificationToken}">http://localhost:4000/seller/verify/${verificationToken}</a></p>`,
+        };
+  
+        transporter.sendMail(mailOptions, (error, info) => {
+          if (error) {
+            console.error(error);
+            return res.status(500).send("Failed to send verification email");
+          }
+          console.log(`Email sent: ${info.response}`);
+        });
+  
+        // Update the user's email and reset verification status
+        user.email = email;
+        user.isEmailVerified = false;
+      }
+
+      if (phoneNumber) {
+          user.phoneNumber = phoneNumber;
+      }
+
+      if (address) {
+          user.address = address;
+      }
+
+      if(password && confirmPassword){
+        const hashedPassword = await bcrypt.hash(password, 12);
+        const hashedConfirmPassword = await bcrypt.hash(confirmPassword, 12);
+
+        user.password = hashedPassword;
+        user.confirmPassword = hashedConfirmPassword;
+
+        await user.save();
+        return res.send("Password Updated Successfully");
+      }
+      if(image){
+        const url = req.protocol + "://" + req.get("host");
+        user.image = url + "/images/" + req.file.filename;
+      }
+
+
+      await user.save();
+
+      return res.send(user);
+  } catch (error) {
+      console.error(error);
+      return res.status(500).send("Internal Server Error");
+  }
+});
+
+module.exports = router;
+
+
+
+
+
   // router.post("/register", upload.single("image"), async (req, res) => {
   //   const {
   //     firstName,
@@ -144,37 +272,3 @@ router.get('/verify/:token', async (req, res) => {
   //   res.send("User Successfully Registered");
   // });
   
-
-router.post("/login", async (req, res) => {
-  console.log("Req", req.body);
-  const { email, password } = req.body;
-
-  const user = await userModel.findOne({ email, role: "seller" });
-  if (!user) {
-    return res.status(400).send("User Is Not Registered");
-  }
-  if(user.verified===false){
-    return res.status(400).send("Please Verify Your Email First");
-  }
-  const hasedPassword = await bcrypt.compare(password, user.password);
-  if (!hasedPassword) {
-    return res.status(400).send("Passwords Do Not Match");
-  }
-  console.log("eee", user);
-  const token = jwt.sign(
-    {
-      _id: user._id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      address: user.address,
-      email: user.email,
-      phoneNumber: user.phoneNumber,
-      image: user.image,
-    },
-    config.get("JWT_SELLER")
-  );
-
-  res.send({ token, firstName: user.firstName });
-});
-
-module.exports = router;
