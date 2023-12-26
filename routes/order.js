@@ -45,6 +45,15 @@ router.post("/address/:id", async (req, res) => {
           status: "Paid",
         },
       });
+
+      // Loop through products in the order and update their paid status
+      for (const productId of order.products) {
+        const product = await productModel.findById(productId);
+        if (product) {
+          product.paid = "Paid";
+          await product.save();
+        }
+      }
     });
 
     await Promise.all(updatePromises);
@@ -54,6 +63,7 @@ router.post("/address/:id", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
+
 
 // Delete an order by ID
 router.delete("/delete/:id", async (req, res) => {

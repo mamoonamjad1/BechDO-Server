@@ -55,6 +55,16 @@ auctionStarted: {
     type:mongoose.Types.ObjectId,
     ref:'users'
 },
+bidStatus:{
+  type:String,
+  enum:["Sold","Unsold"],
+  default:"Unsold"
+},
+paid:{
+  type:String,
+  enum:["Paid","UnPaid"],
+  default:"UnPaid"
+}
 },{timestamps:true})
 
 const productModel = mongoose.model('products' , productSchema)

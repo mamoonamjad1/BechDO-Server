@@ -93,7 +93,7 @@ router.get('/table/:id', async (req, res) => {
   try {
     const { id } = req.params;
     // Find all products that match the given owner id and have a role of "seller"
-    const products = await productModel.find({ owner: id , status:"Finished" , auctionEnded:'true' });
+    const products = await productModel.find({ owner: id , status:"Finished" , auctionEnded:'true' }).populate('bidder');
     res.status(200).send(products);
   } catch (error) {
     //console.error(error);
@@ -116,20 +116,18 @@ router.get('/total/earning/:id', async (req, res) => {
     // Calculate the total earnings by summing up the currentPrice of these products
     let totalEarnings = 0;
     order.forEach((order) => {
-      const currentPriceStr = order.products.currentPrice.toString(); // Convert to string
-     // console.log('Current Price (Before Parsing):', currentPriceStr);
-      
-      // Parse as a floating-point number
-      const currentPriceFloat = parseFloat(currentPriceStr);
-      //console.log('Current Price (After Parsing):', currentPriceFloat);
-    
-      if (!isNaN(currentPriceFloat)) {
-        totalEarnings += currentPriceFloat;
+      // Check if 'products' and 'currentPrice' properties exist before accessing them
+      if (order.products && order.products.currentPrice) {
+        const currentPriceStr = order.products.currentPrice.toString();
+        
+        // Parse as a floating-point number
+        const currentPriceFloat = parseFloat(currentPriceStr);
+
+        if (!isNaN(currentPriceFloat)) {
+          totalEarnings += currentPriceFloat;
+        }
       }
-    
-      //console.log('Total Earnings:', totalEarnings);
     });
-    
 
     // Send the total earnings as a response
     res.status(200).json({ totalEarnings });
@@ -290,7 +288,7 @@ router.get('/generate-excel/:id', async (req, res) => {
     const { id } = req.params;
 
     // Find all finished products that match the given owner id
-    const products = await productModel.find({ owner: id, status: "Finished" });
+    const products = await productModel.find({ owner: id, status: "Finished", bidStatus:"Sold" , paid:"Paid" });
 
     // Create a new Excel workbook and add a worksheet
     const workbook = new xl.Workbook();
@@ -307,7 +305,7 @@ router.get('/generate-excel/:id', async (req, res) => {
     worksheet.cell(1, 2).string('Description').style(headerStyle);
     worksheet.cell(1, 3).string('Quantity').style(headerStyle);
     worksheet.cell(1, 4).string('Base Price').style(headerStyle);
-    worksheet.cell(1, 5).string('Current Price').style(headerStyle);
+    worksheet.cell(1, 5).string('Selling Price').style(headerStyle);
 
     // Add the products data to the worksheet
     products.forEach((product, index) => {

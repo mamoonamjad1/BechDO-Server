@@ -145,6 +145,7 @@ router.post("/bid", async (req, res) => {
     product.bidder = bidder;
     product.currentPrice = currentPrice;
     console.log("Product Bidder:", product.bidder);
+    product.bidStatus = "Sold"
 
     await product.save();
 
@@ -172,6 +173,27 @@ router.post("/bid", async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
+
+router.put('/restart/:id', async(req,res)=>{
+  console.log("In the ROUTE")
+  const { id } = req.params;
+  console.log(id)
+  const product = await productModel.findById(id)
+
+  let currentTime = moment();
+
+  product.auctionStarted = true;
+  product.status = "Active";
+  product.auctionEnded = false
+  product.auctionStartTime = currentTime.toDate();
+  product.auctionEndTime = moment(currentTime)
+    .add(product.duration, "seconds")
+    .toDate();
+
+    await product.save()
+
+    res.send("Auction Restarted")
+})
 
 
 

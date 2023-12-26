@@ -57,8 +57,8 @@ router.post("/seller-payment/:id", async (req, res) => {
       
             const accountLink = await stripe.accountLinks.create({
               account: account.id,
-              refresh_url: "http://localhost:3000/seller/register",
-              return_url: "http://localhost:3000/seller/sign-in",
+              refresh_url: "http://localhost:3000/seller/pages/dashboard",
+              return_url: "http://localhost:3000/seller/pages/dashboard",
               type: "account_onboarding",
             });
       
@@ -67,7 +67,7 @@ router.post("/seller-payment/:id", async (req, res) => {
     } else {
       
       const transfer = await stripe.transfers.create({
-        amount: Math.round(amount*0.95*100),
+        amount: Math.round(amount*0.85*100),
         currency: "gbp",
         destination: user.accountId,
       });
