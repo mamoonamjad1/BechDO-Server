@@ -32,6 +32,7 @@ router.post("/address/:id", async (req, res) => {
 
     // Use Promise.all to update all orders concurrently
     const updatePromises = orders.map(async (order) => {
+      // Update order details
       await orderModel.findByIdAndUpdate(order._id, {
         $set: {
           firstName: firstName,
@@ -41,18 +42,16 @@ router.post("/address/:id", async (req, res) => {
           address: address,
           city: city,
           postalCode: postalCode,
-          deliveryStatus: "Recieved",
+          deliveryStatus: "Received",
           status: "Paid",
-        },
-      });
-
-      // Loop through products in the order and update their paid status
-      for (const productId of order.products) {
-        const product = await productModel.findById(productId);
-        if (product) {
-          product.paid = "Paid";
-          await product.save();
         }
+      }).exec(); // Add exec() to wait for the update operation to complete
+
+      // Update product status for the current order
+      const product = await productModel.findById(order.products);
+      if (product) {
+        product.paid = "Paid";
+        await product.save();
       }
     });
 
@@ -63,6 +62,9 @@ router.post("/address/:id", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
+
+
+
 
 
 // Delete an order by ID
