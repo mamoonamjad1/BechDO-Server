@@ -52,7 +52,7 @@ router.post('/register', async (req, res) => {
         const mailOptions = {
             to: email,
             subject: 'Email Verification',
-            html: `<p>Click on the following link to verify your email: <a href="http://localhost:4000/sellers/verify/${verificationToken}">http://localhost:4000/sellers/verify/${verificationToken}</a></p>`,
+            html: `<p>Click on the following link to verify your email: <a href="http://localhost:4000/users/verify/${verificationToken}">http://localhost:4000/users/verify/${verificationToken}</a></p>`,
         };
         
         
@@ -71,7 +71,7 @@ router.get('/verify/:token', async (req, res) => {
     const token = req.params.token;
 
     const user = await userModel.findOne({
-        role:'seller',
+        role:'buyer',
         verificationToken: token,
         verificationTokenExpires: { $gt: Date.now() }, // Check if the token is still valid
     });
@@ -90,19 +90,19 @@ router.get('/verify/:token', async (req, res) => {
 });
 
 // Add a route for checking verification status
-router.get('/verify-status', async (req, res) => {
-    // Extract the user's email from the request (you might use your authentication logic here)
-    const userEmail = req.user.email; // Assuming you have a user object in the request
+// router.get('/verify-status', async (req, res) => {
+//     // Extract the user's email from the request (you might use your authentication logic here)
+//     const userEmail = req.user.email; // Assuming you have a user object in the request
   
-    // Find the user by email and check if it's verified
-    const user = await userModel.findOne({ email: userEmail });
+//     // Find the user by email and check if it's verified
+//     const user = await userModel.findOne({ email: userEmail });
   
-    if (!user) {
-      return res.status(404).send("User not found");
-    }
+//     if (!user) {
+//       return res.status(404).send("User not found");
+//     }
   
-    res.json({ verified: user.verified });
-  });
+//     res.json({ verified: user.verified });
+//   });
   
 
 // router.post('/register', async(req,res)=>{
@@ -163,7 +163,8 @@ router.post('/login', async (req, res) => {
                 const token = jwt.sign({ _id: newUser._id }, config.get('JWT_SECRET'));
 
                 return res.send({ token, payload });
-            } else {
+            }
+            else{
                 const payload = {
                     _id: user._id,
                     firstName: user.firstName,
@@ -192,7 +193,9 @@ router.post('/login', async (req, res) => {
             if (user.role === 'seller') {
                 return res.status(400).send("Not Authorized");
             }
-
+            if (user.verified === false) {
+                return res.status(400).send("Email not verified");
+            }
             const isPasswordValid = await bcrypt.compare(password, user.password);
 
             if (!isPasswordValid) {

@@ -26,6 +26,7 @@ router.post("/address/:id", async (req, res) => {
   const { id } = req.params;
   const { firstName, lastName, email, phone, address, city, postalCode } = req.body;
 
+  console.log("USER ID:", id);
   try {
     // Find all orders where the buyer is 'id' and the status is 'UnPaid'
     const orders = await orderModel.find({ buyer: id, status: "UnPaid" });
@@ -42,7 +43,7 @@ router.post("/address/:id", async (req, res) => {
           address: address,
           city: city,
           postalCode: postalCode,
-          deliveryStatus: "Received",
+          deliveryStatus: "Recieved",
           status: "Paid",
         }
       }).exec(); // Add exec() to wait for the update operation to complete
@@ -62,10 +63,6 @@ router.post("/address/:id", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
-
-
-
-
 
 // Delete an order by ID
 router.delete("/delete/:id", async (req, res) => {
@@ -99,15 +96,24 @@ router.get("/single/:id", async (req, res) => {
 
 router.get("/delivery/:id", async (req, res) => {
   const { id } = req.params;
-  console.log(id);
-  const orders = await orderModel
-    .find({
-      seller: id,
-      status: "Paid",
-      $or: [{ deliveryStatus: "Recieved" }, { deliveryStatus: "InTransit" }],
-    })
-    .populate("products");
-  res.status(200).send(orders);
+  console.log("SELLER", id);
+
+  try {
+    const orders = await orderModel
+      .find({
+        seller: id,
+        status: "Paid",
+        $or: [{ deliveryStatus: "Recieved" }, { deliveryStatus: "InTransit" }],
+      })
+      .populate("products");
+
+    //console.log("ORDERS", orders);
+
+    res.status(200).send(orders);
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    res.status(500).send("Internal Server Error");
+  }
 });
 
 // Define a route to update the order status and send an email
@@ -126,11 +132,11 @@ router.post("/update-status/:id", async (req, res) => {
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
-    console.log("order",order)
+    //console.log("order",order)
 
     // Update the order status
     order.deliveryStatus = status;
-
+    console.log("order",order)
     // Save the updated order
     await order.save();
     //let testAccount = await nodemailer.createTestAccount();
@@ -144,15 +150,6 @@ router.post("/update-status/:id", async (req, res) => {
     }
   });
 
-    //   let transporter = nodemailer.createTransport({
-    //     host: 'smtp.ethereal.email',
-    //     port: 587,
-    //     secure: false, // true for 465, false for other ports
-    //     auth: {
-    //         user: testAccount.user, // generated ethereal user
-    //         pass: testAccount.pass  // generated ethereal password
-    //     }
-    // });
 
       const mailOptions = {
         from: `${order.seller.email}`, // Sender's email address

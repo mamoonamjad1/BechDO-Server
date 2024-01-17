@@ -88,7 +88,7 @@ router.get('/upcoming', async(req,res)=>{
   res.status(200).send(products)
 })
 
-//Products for single user
+//Product for charts
 router.get('/table/:id', async (req, res) => {
   try {
     const { id } = req.params;
